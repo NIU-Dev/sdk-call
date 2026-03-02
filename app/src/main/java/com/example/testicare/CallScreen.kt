@@ -1,0 +1,152 @@
+package com.example.testicare
+
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import cc.cicare.sdkcall.CiCareSdkCall
+
+@Composable
+fun CallScreen(modifier: Modifier = Modifier) {
+  var name by remember { mutableStateOf("") }
+  var phoneNumber by remember { mutableStateOf("") }
+  var callStatus by remember { mutableStateOf("Ready") }
+  val context = LocalContext.current
+  val currentActivity = LocalActivity.current as? ComponentActivity
+  val coroutineScope = rememberCoroutineScope()
+
+  LaunchedEffect(Unit) {
+    currentActivity?.let {
+      PermissionUtil.checkAndRequestPermissions(context, it)
+    }
+  }
+
+//  DisposableEffect(Unit) {
+//    CiCareSdkCall.setEventListener(object : CallEventListener {
+//      override fun onCallStateChange(callState: CallState) {
+//        coroutineScope.launch {
+//          callStatus = "State: $callState"
+//        }
+//      }
+//
+//      override fun onError(code: Int, message: String) {
+//        coroutineScope.launch {
+//          callStatus = "Error $code: $message"
+//        }
+//      }
+//    })
+//
+//    onDispose {}
+//  }
+
+
+  Scaffold {
+    Column(
+      modifier = modifier
+        .fillMaxSize()
+        .padding(it)
+        .padding(16.dp),
+      verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+      Text(
+        text = "Call Screen",
+        style = MaterialTheme.typography.headlineSmall
+      )
+
+      OutlinedTextField(
+        value = name,
+        onValueChange = { name = it },
+        label = { Text("Name") },
+        modifier = Modifier.fillMaxWidth(),
+//        colors = OutlinedTextFieldDefaults.colors()
+//          .copy(
+//            focusedTextColor = Color.DarkGray,
+//            focusedLabelColor = Color.DarkGray,
+//            unfocusedTextColor = Color.DarkGray,
+//            unfocusedLabelColor = Color.DarkGray
+//          ),
+        singleLine = true
+      )
+
+      OutlinedTextField(
+        value = phoneNumber,
+        onValueChange = { phoneNumber = it },
+        label = { Text("Nomor Telfon") },
+        modifier = Modifier.fillMaxWidth(),
+//        colors = OutlinedTextFieldDefaults.colors()
+//          .copy(
+//            focusedTextColor = Color.DarkGray,
+//            focusedLabelColor = Color.DarkGray,
+//            unfocusedTextColor = Color.DarkGray,
+//            unfocusedLabelColor = Color.DarkGray
+//          ),
+        singleLine = true
+      )
+
+      Button(
+        onClick = {
+          if (currentActivity == null) {
+            callStatus = "Error: Activity tidak tersedia"
+            return@Button
+          }
+
+          if (!PermissionUtil.checkAndRequestPermissions(context, currentActivity)) {
+            callStatus = "Permission belum diberikan"
+            return@Button
+          }
+
+          val callerName = name.ifBlank { "Unknown" }
+          CiCareSdkCall.makeCallSip(
+            activity = currentActivity,
+            callerId = phoneNumber.ifBlank { "08123123" },
+            callerName = callerName,
+            callerAvatar = "",
+            checkSum = "dummy-checksum",
+            metaData = emptyMap(),
+            destination = "1500738",
+            destinationName = "destination-1500738",
+            destinationAvatar = "",
+          )
+
+          callStatus = "Calling $callerName ($phoneNumber)"
+        },
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Text("Call")
+      }
+
+      Button(
+        onClick = {
+          callStatus = "Call ended"
+        },
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Text("Hang Up")
+      }
+
+//      Text(
+//        text = callStatus,
+//        style = MaterialTheme.typography.bodyMedium
+//      )
+    }
+  }
+
+}
