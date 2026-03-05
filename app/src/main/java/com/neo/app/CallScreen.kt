@@ -1,7 +1,8 @@
 package com.neo.app
 
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,7 +18,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -30,8 +30,7 @@ fun CallScreen(modifier: Modifier = Modifier) {
   var phoneNumber by remember { mutableStateOf("") }
   var callStatus by remember { mutableStateOf("Ready") }
   val context = LocalContext.current
-  val currentActivity = LocalActivity.current as? ComponentActivity
-  val coroutineScope = rememberCoroutineScope()
+  val currentActivity = context.findComponentActivity()
 
   LaunchedEffect(Unit) {
     currentActivity?.let {
@@ -74,30 +73,16 @@ fun CallScreen(modifier: Modifier = Modifier) {
       OutlinedTextField(
         value = name,
         onValueChange = { name = it },
-        label = { Text("Name") },
+        label = { Text("Your Name") },
         modifier = Modifier.fillMaxWidth(),
-//        colors = OutlinedTextFieldDefaults.colors()
-//          .copy(
-//            focusedTextColor = Color.DarkGray,
-//            focusedLabelColor = Color.DarkGray,
-//            unfocusedTextColor = Color.DarkGray,
-//            unfocusedLabelColor = Color.DarkGray
-//          ),
         singleLine = true
       )
 
       OutlinedTextField(
         value = phoneNumber,
         onValueChange = { phoneNumber = it },
-        label = { Text("Phone Number") },
+        label = { Text("Your Phone Number") },
         modifier = Modifier.fillMaxWidth(),
-//        colors = OutlinedTextFieldDefaults.colors()
-//          .copy(
-//            focusedTextColor = Color.DarkGray,
-//            focusedLabelColor = Color.DarkGray,
-//            unfocusedTextColor = Color.DarkGray,
-//            unfocusedLabelColor = Color.DarkGray
-//          ),
         singleLine = true
       )
 
@@ -133,15 +118,6 @@ fun CallScreen(modifier: Modifier = Modifier) {
         Text("Call")
       }
 
-//      Button(
-//        onClick = {
-//          callStatus = "Call ended"
-//        },
-//        modifier = Modifier.fillMaxWidth()
-//      ) {
-//        Text("Hang Up")
-//      }
-
       Text(
         text = callStatus,
         style = MaterialTheme.typography.bodyMedium
@@ -149,4 +125,12 @@ fun CallScreen(modifier: Modifier = Modifier) {
     }
   }
 
+}
+
+private tailrec fun Context.findComponentActivity(): ComponentActivity? {
+  return when (this) {
+    is ComponentActivity -> this
+    is ContextWrapper -> baseContext.findComponentActivity()
+    else -> null
+  }
 }

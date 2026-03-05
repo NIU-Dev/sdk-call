@@ -1,4 +1,7 @@
 pluginManagement {
+  plugins {
+    id("org.jetbrains.kotlin.android") version "1.9.23" apply false
+  }
   repositories {
     google {
       content {
@@ -22,4 +25,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Test Icare"
 include(":app")
- 
+include(":sdkcall")

@@ -13,17 +13,16 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation3.runtime.NavEntry
-import androidx.navigation3.ui.NavDisplay
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.neo.app.ui.theme.TestIcareTheme
 
-data object HomeRoute
-data object CallRoute
+private const val HOME_ROUTE = "home"
+private const val CALL_ROUTE = "call"
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,37 +30,32 @@ class MainActivity : ComponentActivity() {
     enableEdgeToEdge()
     setContent {
       TestIcareTheme {
-        AppNav3()
+        AppNav()
       }
     }
   }
 }
 
 @Composable
-fun AppNav3(modifier: Modifier = Modifier) {
-  val backStack = remember { mutableStateListOf<Any>(HomeRoute) }
+fun AppNav(modifier: Modifier = Modifier) {
+  val navController = rememberNavController()
 
-  NavDisplay(
-    backStack = backStack,
-    modifier = modifier.fillMaxSize(),
-    onBack = { backStack.removeLastOrNull() },
-    entryProvider = { key ->
-      when (key) {
-        is HomeRoute -> NavEntry(key) {
-          HomeScreen(
-            onNavigateToCall = { backStack.add(CallRoute) },
-            modifier = Modifier.fillMaxSize()
-          )
-        }
-
-        is CallRoute -> NavEntry(key) {
-          CallScreen(modifier = Modifier.fillMaxSize())
-        }
-
-        else -> NavEntry(Unit) { Text("Unknown route") }
-      }
+  NavHost(
+    navController = navController,
+    startDestination = HOME_ROUTE,
+    modifier = modifier.fillMaxSize()
+  ) {
+    composable(HOME_ROUTE) {
+      HomeScreen(
+        onNavigateToCall = { navController.navigate(CALL_ROUTE) },
+        modifier = Modifier.fillMaxSize()
+      )
     }
-  )
+
+    composable(CALL_ROUTE) {
+      CallScreen(modifier = Modifier.fillMaxSize())
+    }
+  }
 }
 
 @Composable
@@ -90,6 +84,6 @@ fun HomeScreen(
 @Composable
 fun GreetingPreview() {
   TestIcareTheme {
-    AppNav3()
+    AppNav()
   }
 }

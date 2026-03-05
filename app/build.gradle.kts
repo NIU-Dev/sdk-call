@@ -1,13 +1,10 @@
-import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
-import com.google.gson.Gson
-
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.android)
-  alias(libs.plugins.kotlin.compose)
+//  alias(libs.plugins.kotlin.compose)
 }
 
-data class EnvSimobile(
+data class VirtualEnv(
   val baseUrl: Map<String, String> = emptyMap(),
   val keys: Map<String, String> = emptyMap(),
   val signing: Map<String, String> = emptyMap()
@@ -15,12 +12,12 @@ data class EnvSimobile(
 
 android {
   namespace = "com.neo.app"
-  compileSdk = 34
+  compileSdk = 35
 
   defaultConfig {
     applicationId = "com.neo.app"
     minSdk = 24
-    targetSdk = 36
+    targetSdk = 35
     versionCode = 1
     versionName = "1.0"
 
@@ -43,14 +40,17 @@ android {
   buildFeatures {
     compose = true
   }
+  composeOptions {
+    kotlinCompilerExtensionVersion = "1.5.13"
+  }
 
 //  val localProperties = gradleLocalProperties(projectRootDir = rootDir, providers = providers)
 //  fun getLocalProperty(key: String) = localProperties.getProperty(key)
 //
 //  val rawEnvCI = System.getenv("ENV_NEO_CALL")
 //  val env = rawEnvCI?.let {
-//    runCatching { Gson().fromJson(it, EnvSimobile::class.java) }.getOrNull()
-//  } ?: EnvSimobile()
+//    runCatching { Gson().fromJson(it, VirtualEnv::class.java) }.getOrNull()
+//  } ?: VirtualEnv()
 //
 //  fun envSigning(key: String) : String? = env.signing[key] ?: getLocalProperty(key)
 //
@@ -61,7 +61,6 @@ android {
 //      val alias   = envSigning("KEY_ALIAS")
 //      val keyPass = envSigning("KEY_PASSWORD")
 //
-//      // ✅ penting: jangan set storeFile kalau kosong
 //      if (!ksPath.isNullOrBlank() &&
 //        !ksPass.isNullOrBlank() &&
 //        !alias.isNullOrBlank() &&
@@ -91,8 +90,7 @@ dependencies {
   implementation(libs.androidx.compose.ui.graphics)
   implementation(libs.androidx.compose.ui.tooling.preview)
   implementation(libs.androidx.compose.material3)
-  implementation(libs.androidx.navigation3.runtime)
-  implementation(libs.androidx.navigation3.ui)
+  implementation(libs.androidx.navigation.compose)
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(libs.androidx.espresso.core)
