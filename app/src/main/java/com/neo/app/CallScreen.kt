@@ -1,4 +1,4 @@
-package com.example.testicare
+package com.neo.app
 
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
@@ -89,7 +89,7 @@ fun CallScreen(modifier: Modifier = Modifier) {
       OutlinedTextField(
         value = phoneNumber,
         onValueChange = { phoneNumber = it },
-        label = { Text("Nomor Telfon") },
+        label = { Text("Phone Number") },
         modifier = Modifier.fillMaxWidth(),
 //        colors = OutlinedTextFieldDefaults.colors()
 //          .copy(
@@ -126,26 +126,26 @@ fun CallScreen(modifier: Modifier = Modifier) {
             destinationAvatar = "",
           )
 
-          callStatus = "Calling $callerName ($phoneNumber)"
+          callStatus = "Caller $callerName ($phoneNumber)"
         },
         modifier = Modifier.fillMaxWidth()
       ) {
         Text("Call")
       }
 
-      Button(
-        onClick = {
-          callStatus = "Call ended"
-        },
-        modifier = Modifier.fillMaxWidth()
-      ) {
-        Text("Hang Up")
-      }
+//      Button(
+//        onClick = {
+//          callStatus = "Call ended"
+//        },
+//        modifier = Modifier.fillMaxWidth()
+//      ) {
+//        Text("Hang Up")
+//      }
 
-//      Text(
-//        text = callStatus,
-//        style = MaterialTheme.typography.bodyMedium
-//      )
+      Text(
+        text = callStatus,
+        style = MaterialTheme.typography.bodyMedium
+      )
     }
   }
 

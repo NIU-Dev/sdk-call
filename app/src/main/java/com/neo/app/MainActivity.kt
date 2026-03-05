@@ -1,4 +1,4 @@
-package com.example.testicare
+package com.neo.app
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
-import com.example.testicare.ui.theme.TestIcareTheme
+import com.neo.app.ui.theme.TestIcareTheme
 
 data object HomeRoute
 data object CallRoute

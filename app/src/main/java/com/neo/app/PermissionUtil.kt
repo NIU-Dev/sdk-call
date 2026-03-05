@@ -1,4 +1,4 @@
-package com.example.testicare
+package com.neo.app
 
 import android.app.Activity
 import android.content.Context

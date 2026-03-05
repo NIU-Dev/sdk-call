@@ -1,4 +1,4 @@
-package com.example.testicare
+package com.neo.app
 
 import org.junit.Test
 

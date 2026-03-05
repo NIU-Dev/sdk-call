@@ -1,15 +1,24 @@
+import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
+import com.google.gson.Gson
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
 }
 
+data class EnvSimobile(
+  val baseUrl: Map<String, String> = emptyMap(),
+  val keys: Map<String, String> = emptyMap(),
+  val signing: Map<String, String> = emptyMap()
+)
+
 android {
-  namespace = "com.example.testicare"
-  compileSdk = 36
+  namespace = "com.neo.app"
+  compileSdk = 34
 
   defaultConfig {
-    applicationId = "com.example.testicare"
+    applicationId = "com.neo.app"
     minSdk = 24
     targetSdk = 36
     versionCode = 1
@@ -34,6 +43,42 @@ android {
   buildFeatures {
     compose = true
   }
+
+//  val localProperties = gradleLocalProperties(projectRootDir = rootDir, providers = providers)
+//  fun getLocalProperty(key: String) = localProperties.getProperty(key)
+//
+//  val rawEnvCI = System.getenv("ENV_NEO_CALL")
+//  val env = rawEnvCI?.let {
+//    runCatching { Gson().fromJson(it, EnvSimobile::class.java) }.getOrNull()
+//  } ?: EnvSimobile()
+//
+//  fun envSigning(key: String) : String? = env.signing[key] ?: getLocalProperty(key)
+//
+//  signingConfigs {
+//    register("release") {
+//      val ksPath  = envSigning("KEYSTORE_PATH")
+//      val ksPass  = envSigning("KEYSTORE_PASSWORD")
+//      val alias   = envSigning("KEY_ALIAS")
+//      val keyPass = envSigning("KEY_PASSWORD")
+//
+//      // ✅ penting: jangan set storeFile kalau kosong
+//      if (!ksPath.isNullOrBlank() &&
+//        !ksPass.isNullOrBlank() &&
+//        !alias.isNullOrBlank() &&
+//        !keyPass.isNullOrBlank()
+//      ) {
+//        storeFile = file(ksPath)
+//        storePassword = ksPass
+//        keyAlias = alias
+//        keyPassword = keyPass
+//      }
+//    }
+//
+//    // You can define additional signing configurations if needed
+//    // register("debug") {
+//    //     ...
+//    // }
+//  }
 }
 
 dependencies {
@@ -56,5 +101,6 @@ dependencies {
   debugImplementation(libs.androidx.compose.ui.tooling)
   debugImplementation(libs.androidx.compose.ui.test.manifest)
 
+  implementation(libs.converter.gson)
   implementation("com.github.cicareteam:cicare-sdk-rtc:1.2.1-rc.6")
 }

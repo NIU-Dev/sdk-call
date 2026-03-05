@@ -1,4 +1,4 @@
-package com.example.testicare.ui.theme
+package com.neo.app.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
