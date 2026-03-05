@@ -12,23 +12,3 @@ buildscript {
     classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23")
   }
 }
-
-subprojects {
-  configurations.configureEach {
-    resolutionStrategy {
-      force(
-        "org.jetbrains.kotlin:kotlin-stdlib:1.9.23",
-        "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.23",
-        "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.23",
-        "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.23",
-        "org.jetbrains.kotlin:kotlin-reflect:1.9.23"
-      )
-      eachDependency {
-        if (requested.group == "org.jetbrains.kotlin" && requested.name.startsWith("kotlin-stdlib")) {
-          useVersion("1.9.23")
-          because("Prevent Kotlin metadata mismatch with compiler 1.9.23")
-        }
-      }
-    }
-  }
-}
