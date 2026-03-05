@@ -100,5 +100,5 @@ dependencies {
   debugImplementation(libs.androidx.compose.ui.test.manifest)
 
   implementation(libs.converter.gson)
-  implementation("com.github.cicareteam:cicare-sdk-rtc:1.2.1-rc.6")
+  implementation(project(":sdkcall"))
 }

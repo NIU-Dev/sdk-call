@@ -22,7 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import cc.cicare.sdkcall.CiCareSdkCall
+import com.neo.sdkcall.NeoSdkCall
 
 @Composable
 fun CallScreen(modifier: Modifier = Modifier) {
@@ -39,7 +39,7 @@ fun CallScreen(modifier: Modifier = Modifier) {
   }
 
 //  DisposableEffect(Unit) {
-//    CiCareSdkCall.setEventListener(object : CallEventListener {
+//    NeoSdkCall.setEventListener(object : NeoCallEventListener {
 //      override fun onCallStateChange(callState: CallState) {
 //        coroutineScope.launch {
 //          callStatus = "State: $callState"
@@ -99,7 +99,7 @@ fun CallScreen(modifier: Modifier = Modifier) {
           }
 
           val callerName = name.ifBlank { "Unknown" }
-          CiCareSdkCall.makeCallSip(
+          NeoSdkCall.makeCallSip(
             activity = currentActivity,
             callerId = phoneNumber.ifBlank { "08123123" },
             callerName = callerName,

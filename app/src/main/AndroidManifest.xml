@@ -34,14 +34,6 @@
       </intent-filter>
     </activity>
 
-    <service
-        android:name="cc.cicare.sdkcall.services.IncomingCallService"
-        android:exported="false"
-        android:foregroundServiceType="phoneCall" />
-    <service
-        android:name="cc.cicare.sdkcall.services.CiCareCallService"
-        android:exported="false"
-        android:foregroundServiceType="microphone|phoneCall" />
   </application>
 
 </manifest>

@@ -42,6 +42,9 @@ dependencies {
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(libs.androidx.espresso.core)
+
+  implementation("com.github.cicareteam:cicare-sdk-rtc:1.2.1-rc.6")
+
 }
 
 afterEvaluate {
