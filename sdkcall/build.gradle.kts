@@ -43,7 +43,7 @@ dependencies {
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(libs.androidx.espresso.core)
 
-  implementation("com.github.cicareteam:cicare-sdk-rtc:1.2.1-rc.6")
+  implementation("com.github.cicareteam:cicare-sdk-rtc:1.2.1-rc.7")
 
 }
 
@@ -53,7 +53,7 @@ afterEvaluate {
       create<MavenPublication>("release") {
         groupId = "com.github.kharozim"
         artifactId = "neo-sdk-rtc"
-        version = "1.0.0"
+        version = "1.0.0-beta2"
         from(components["release"])
       }
     }
