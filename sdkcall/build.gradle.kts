@@ -51,9 +51,9 @@ afterEvaluate {
   publishing {
     publications {
       create<MavenPublication>("release") {
-        groupId = "com.github.kharozim"
-        artifactId = "neo-sdk-rtc"
-        version = "1.0.0-beta3"
+        groupId = "com.github.NIU-Dev"
+        artifactId = "sdk-call"
+        version = "1.0.0"
         from(components["release"])
       }
     }
