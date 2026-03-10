@@ -38,25 +38,6 @@ fun CallScreen(modifier: Modifier = Modifier) {
     }
   }
 
-//  DisposableEffect(Unit) {
-//    NeoSdkCall.setEventListener(object : NeoCallEventListener {
-//      override fun onCallStateChange(callState: CallState) {
-//        coroutineScope.launch {
-//          callStatus = "State: $callState"
-//        }
-//      }
-//
-//      override fun onError(code: Int, message: String) {
-//        coroutineScope.launch {
-//          callStatus = "Error $code: $message"
-//        }
-//      }
-//    })
-//
-//    onDispose {}
-//  }
-
-
   Scaffold {
     Column(
       modifier = modifier
