@@ -53,7 +53,7 @@ afterEvaluate {
       create<MavenPublication>("release") {
         groupId = "com.github.kharozim"
         artifactId = "neo-sdk-rtc"
-        version = "1.0.0-beta2"
+        version = "1.0.0-beta3"
         from(components["release"])
       }
     }
