@@ -1,5 +1,6 @@
 package com.neo.lib_call.ui
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -35,6 +36,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -46,6 +48,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -79,14 +82,35 @@ internal fun CallScreen(
   onEndCallClick: () -> Unit,
   onError: () -> Unit,
 ) {
+  val context = LocalContext.current
   var showDialPad by rememberSaveable { mutableStateOf(false) }
   var showSpeakerDialog by rememberSaveable { mutableStateOf(false) }
+  val backPressDelay = 1500L
+  var lastBackTimePress by remember { mutableLongStateOf(0L) }
 
   BackHandler {
     when {
-      showSpeakerDialog -> showSpeakerDialog = false
-      showDialPad -> showDialPad = false
-      else -> onEndCallClick()
+      showSpeakerDialog -> {
+        showSpeakerDialog = false
+      }
+
+      showDialPad -> {
+        showDialPad = false
+      }
+
+      else -> {
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - lastBackTimePress < backPressDelay) {
+          onEndCallClick()
+        } else {
+          lastBackTimePress = currentTime
+          Toast.makeText(
+            context,
+            "Press again to end call",
+            Toast.LENGTH_SHORT
+          ).show()
+        }
+      }
     }
   }
 
@@ -494,7 +518,7 @@ private fun Prev() {
         metadata = mapOf(),
         callState = CallState.Connected,
         callStateMessage = "call end",
-        fatalError = "Unable to resolve host ",
+        fatalError = "",
         timeCall = "12:12"
       ),
       onMuteClick = {},

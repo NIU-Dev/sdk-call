@@ -178,7 +178,7 @@ internal class CallViewModel(
         }
       }
     }
-    viewModelScope.launch {
+//    viewModelScope.launch {
 //      CallWebSocket.callState.collect { wsState ->
 //        val callSession = CallSessionManager.callState.value
 //        val isRingging = wsState == CallState.Ringing && callSession == CallState.Connected
@@ -195,7 +195,7 @@ internal class CallViewModel(
 //          return@collect
 //        }
 //      }
-    }
+//    }
 
     viewModelScope.launch {
       CallSessionManager.callStatusMessage.collect { message ->
@@ -237,6 +237,7 @@ internal class CallViewModel(
         CallSessionManager.updateCallState(CallState.Dialing, "Dialing")
 
 //        LinphoneManager.startOutgoingCall(request.destinationNumber, request.metadata["phone_id"])
+
 
         val startCall = repo.requestCall(
           CallApiRequest(

@@ -124,11 +124,13 @@ fun CallScreen() {
     var passwordVisible by remember { mutableStateOf(false) }
     var destination by remember { mutableStateOf("94200105629") }
     var name by remember { mutableStateOf("Call Center PT ABC") }
-    var image by remember { mutableStateOf("https://img.magnific.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4841.jpg") }
-    var user by remember { mutableStateOf("extention") }
-    var pass by remember { mutableStateOf("pass_extention") }
-    var domain by remember { mutableStateOf("domain") }
+//    var image by remember { mutableStateOf("https://img.magnific.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4841.jpg") }
+    var image by remember { mutableStateOf("") }
+    var user by remember { mutableStateOf("extension") }
+    var pass by remember { mutableStateOf("extension-pass") }
+    var domain by remember { mutableStateOf("domain / server") }
     var typeCall by remember { mutableStateOf("teleai") }
+    var callerName by remember { mutableStateOf("INDRA") }
 
     Box(
       modifier = Modifier
@@ -154,9 +156,9 @@ fun CallScreen() {
         Spacer(Modifier.height(22.dp))
 
         RegistrationStatusCard(registrationState)
-        Spacer(Modifier.height(16.dp))
 
         if (registrationState == RegisterState.Ok) {
+          Spacer(Modifier.height(16.dp))
           FormCard("Cal State", "Current call state") {
             Text(
               callState.name,
@@ -172,10 +174,10 @@ fun CallScreen() {
 
         Spacer(Modifier.height(16.dp))
 
-//        FormCard(
-//          title = "SIP account",
-//          subtitle = "Register once before starting a call",
-//        ) {
+        FormCard(
+          title = "Caller account",
+          subtitle = "Register once before starting a call",
+        ) {
 //          AppTextField(
 //            value = user,
 //            onValueChange = { user = it },
@@ -209,7 +211,15 @@ fun CallScreen() {
 //            label = "Domain / server",
 //            icon = Icons.Rounded.AccountCircle,
 //          )
-//
+
+//          Spacer(Modifier.height(12.dp))
+          AppTextField(
+            value = callerName,
+            onValueChange = { callerName = it },
+            label = "Caller Name",
+            icon = Icons.Rounded.AccountCircle,
+          )
+
 //          registrationError?.let { error ->
 //            Spacer(Modifier.height(12.dp))
 //            Surface(
@@ -224,8 +234,8 @@ fun CallScreen() {
 //              )
 //            }
 //          }
-//
-//          Spacer(Modifier.height(16.dp))
+
+          Spacer(Modifier.height(16.dp))
 //          Button(
 //            enabled = registrationState !in listOf(
 //              RegisterState.Progress,
@@ -270,7 +280,7 @@ fun CallScreen() {
 //              Text(if (registrationState == RegisterState.Ok) "Re-register" else "Register")
 //            }
 //          }
-//
+
 //          if (registrationState == RegisterState.Ok) {
 //            TextButton(
 //              onClick = {
@@ -286,9 +296,9 @@ fun CallScreen() {
 //              Text("Unregister account")
 //            }
 //          }
-//        }
-//
-//        Spacer(Modifier.height(16.dp))
+        }
+
+        Spacer(Modifier.height(16.dp))
         FormCard(
           title = "Call destination",
           subtitle = "Choose who you want to contact",
@@ -337,7 +347,7 @@ fun CallScreen() {
               metadata = mapOf(
                 "telephone_id" to "telID",
                 "customer_id" to "custID",
-                "customer_name" to name,
+                "customer_name" to callerName,
                 "type_call" to typeCall
               ),
             )
@@ -357,7 +367,7 @@ fun CallScreen() {
               metadata = mapOf(
                 "telephone_id" to "telID",
                 "customer_id" to "custID",
-                "customer_name" to name,
+                "customer_name" to callerName,
                 "type_call" to typeCall
               )
             )

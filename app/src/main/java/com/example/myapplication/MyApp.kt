@@ -12,7 +12,7 @@ import com.neo.lib_call.api.CallSdk
 class MyApp : Application() {
   override fun onCreate() {
     super.onCreate()
-    CallSdk.init(this, isDebug = true)
+    CallSdk.init(this, isDebug = false)
     CallSdk.initAPI(
       baseUrl = "YOUR_URL",
       token = "YOUR_TOKEN"
