@@ -1,11 +1,14 @@
 package com.neo.lib_call.ui
 
 import android.Manifest
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -23,12 +26,14 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -114,6 +119,7 @@ internal class CallActivity : ComponentActivity() {
         Loading("Loading..") { }
       }
 
+      KeepScreenOn()
       SetSystemBarAppearance(true)
 
       MaterialTheme {
@@ -263,4 +269,28 @@ private fun Prev() {
       onError = {}
     )
   }
+}
+
+
+@Composable
+fun KeepScreenOn() {
+  val context = LocalContext.current
+  DisposableEffect(Unit) {
+    val window = context.findActivity()?.window
+    window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+    onDispose {
+      window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    }
+  }
+}
+
+// Helper untuk mengekstrak Activity dari Context (menangani ContextWrapper)
+private fun Context.findActivity(): Activity? {
+  var currentContext = this
+  while (currentContext is ContextWrapper) {
+    if (currentContext is Activity) return currentContext
+    currentContext = currentContext.baseContext
+  }
+  return null
 }

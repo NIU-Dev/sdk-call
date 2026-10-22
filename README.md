@@ -1,7 +1,19 @@
 # NEO SDK Call Android
 
-This SDK allows you to integrate **outgoing and incoming VoIP call features** into your Android app using the **NEO SDK** powered by **Linphone SDK**, **Asterisk/PBX Click-to-Call API**, and real-time **WebSocket** event signaling.
+This SDK allows you to integrate **outgoing VoIP call features** into your Android app using the **NEO SDK** 
 
+---
+
+## Requirements & Compatibility
+
+| Specification | Supported / Recommended Version |
+|---|---|
+| **Minimum Android SDK (`minSdk`)** | API 24 (Android 7.0 Nougat) |
+| **Compile Android SDK (`compileSdk`)** | API 34+ (Compiled with API 36) |
+| **Kotlin Version** | 2.0.0+ (Tested with Kotlin 2.2.10) |
+| **Java Compatibility** | Java 11 (`JavaVersion.VERSION_11`) / JDK 11, 17, 21 |
+| **Jetpack Compose** | Compose BOM 2024.09.00+ |
+| **Version Call SDK** | 1.0.0 |
 ---
 
 ## Installation
@@ -45,6 +57,10 @@ Ensure the following permissions are present in your app's `AndroidManifest.xml`
 ```xml
 <uses-permission android:name="android.permission.INTERNET" />
 <uses-permission android:name="android.permission.RECORD_AUDIO" />
+        
+<!--  optional if error sync gradle-->
+<uses-permission android:name="android.permission.WAKE_LOCK"
+tools:remove="android:maxSdkVersion" />
 ```
 
 ---
@@ -91,6 +107,27 @@ If your app uses ProGuard / R8 minification, add the following rules to your `pr
     @retrofit2.http.* <methods>;
 }
 ```
+### 3. Gradle Configuration (Resolve Conflict)
+if error sync gradle, add this to `app/build.gradle.kts`:
+
+
+```kotlin
+android {
+  ... 
+  packaging {
+    resources {
+      excludes += "/META-INF/{AL2.0,LGPL2.1}"
+      // Abaikan atau kecualikan file MANIFEST.MF yang konflik
+      excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+    }
+  }
+}
+```
+> **Note:**
+> sample error gradle : 
+> *2 files found with path 'META-INF/versions/9/OSGI-INF/MANIFEST.MF' from inputs:*
+> - *com.squareup.okhttp3:logging-interceptor:5.4.0/logging-interceptor-5.4.0.jar*
+> - *org.jspecify:jspecify:1.0.0/jspecify-1.0.0.jar*
 
 ---
 
