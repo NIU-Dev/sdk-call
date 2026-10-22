@@ -122,15 +122,12 @@ fun CallScreen() {
   Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
     val context = LocalContext.current
     var passwordVisible by remember { mutableStateOf(false) }
-//    var destination by remember { mutableStateOf("085600431521") }
     var destination by remember { mutableStateOf("94200105629") }
-//    var destination by remember { mutableStateOf("085771518294") }
-    var name by remember { mutableStateOf("Jack Sparrow") }
+    var name by remember { mutableStateOf("Call Center PT ABC") }
     var image by remember { mutableStateOf("https://img.magnific.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4841.jpg") }
-    var user by remember { mutableStateOf("1012") }
-    var pass by remember { mutableStateOf("5678") }
-//    var domain by remember { mutableStateOf("staging-pbx.neokarya.co.id") }
-    var domain by remember { mutableStateOf("147.139.193.218:5551") }
+    var user by remember { mutableStateOf("extention") }
+    var pass by remember { mutableStateOf("pass_extention") }
+    var domain by remember { mutableStateOf("domain") }
     var typeCall by remember { mutableStateOf("teleai") }
 
     Box(
@@ -343,9 +340,6 @@ fun CallScreen() {
                 "customer_name" to name,
                 "type_call" to typeCall
               ),
-              onFailedRegister = {
-                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-              }
             )
           }) {
           Text("Call with register")

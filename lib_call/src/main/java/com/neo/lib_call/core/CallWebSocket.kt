@@ -92,10 +92,6 @@ object CallWebSocket {
     val requestBuilder = Request.Builder()
       .url(url)
 
-//    if (!token.isNullOrBlank()) {
-//      requestBuilder.addHeader("Authorization", "Bearer $token")
-//    }
-
     val request = requestBuilder.build()
 
     webSocket = client.newWebSocket(

@@ -91,7 +91,7 @@ internal fun CallScreen(
   }
 
   if (!state.fatalError.isNullOrEmpty()) {
-    ErrorDialog(state.fatalError) {
+    ErrorDialog(state.fatalError.filterErrorMessage()) {
       onError()
     }
   }
@@ -122,12 +122,12 @@ internal fun CallScreen(
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold
           )
-          Text(
-            text = "SIP: ${state.registerState.name}",
-            color = state.registerState.statusColor(),
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(top = 6.dp)
-          )
+//          Text(
+//            text = "SIP: ${state.registerState.name}",
+//            color = state.registerState.statusColor(),
+//            style = MaterialTheme.typography.bodySmall,
+//            modifier = Modifier.padding(top = 6.dp)
+//          )
         }
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -277,6 +277,13 @@ internal fun CallScreen(
         )
       }
     }
+  }
+}
+
+private fun String.filterErrorMessage(): String {
+  return when {
+    this.contains("Unable to resolve host", ignoreCase = true) -> "Failed connect to server"
+    else -> this
   }
 }
 
@@ -449,18 +456,20 @@ fun RoundIconButton(
 
 @Composable
 private fun ErrorDialog(message: String, onDismiss: () -> Unit) {
+  SetSystemBarAppearance(false)
   Dialog(
     onDismissRequest = onDismiss,
     properties = DialogProperties(
-      usePlatformDefaultWidth = false
+      usePlatformDefaultWidth = false,
+      decorFitsSystemWindows = true,
     ),
   ) {
     Box(
       contentAlignment = Alignment.Center,
       modifier = Modifier
         .fillMaxSize()
+        .background(Color.Black.copy(alpha = 0.15f))
         .padding(horizontal = 24.dp)
-        .background(Color.DarkGray)
     ) {
       Text(
         message, Modifier
@@ -485,7 +494,7 @@ private fun Prev() {
         metadata = mapOf(),
         callState = CallState.Connected,
         callStateMessage = "call end",
-        fatalError = "",
+        fatalError = "Unable to resolve host ",
         timeCall = "12:12"
       ),
       onMuteClick = {},

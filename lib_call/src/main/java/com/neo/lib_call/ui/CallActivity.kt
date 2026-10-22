@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -14,7 +13,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,6 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neo.lib_call.api.CallSdk
@@ -39,6 +41,8 @@ import com.neo.lib_call.core.TimerManager
 import com.neo.lib_call.model.CallRequest
 import com.neo.lib_call.model.CallState
 import com.neo.lib_call.model.ReleaseExtensionState
+import com.neo.lib_call.model.SpeakerOut
+import com.neo.lib_call.util.Colors
 import com.neo.lib_call.util.IntentKeys
 import com.neo.lib_call.util.MetadataConverter
 import java.io.Serializable
@@ -102,13 +106,12 @@ internal class CallActivity : ComponentActivity() {
             ReleaseExtensionState.Failed
           )
         ) {
-          Toast.makeText(this@CallActivity, "release : ${state.releaseExtensionState.name}", Toast.LENGTH_SHORT).show()
           finish()
         }
       }
 
       if (showLoading) {
-        Loading(state.callStateMessage) { }
+        Loading("Loading..") { }
       }
 
       SetSystemBarAppearance(true)
@@ -199,15 +202,29 @@ internal class CallActivity : ComponentActivity() {
 
 @Composable
 private fun Loading(message: String, onDismissRequest: () -> Unit) {
-  Dialog(onDismissRequest = onDismissRequest) {
-    Column(
-      horizontalAlignment = Alignment.CenterHorizontally,
+  Dialog(
+    onDismissRequest = onDismissRequest,
+    properties = DialogProperties(
+      usePlatformDefaultWidth = false,
+      decorFitsSystemWindows = false
+    )
+  ) {
+    Box(
       modifier = Modifier
-        .background(Color.White, RoundedCornerShape(12.dp))
-        .padding(24.dp)
+        .fillMaxSize()
+        .background(Color.Black.copy(alpha = 0.15f)),
+      contentAlignment = Alignment.Center
     ) {
-      CircularProgressIndicator(modifier = Modifier.size(32.dp))
-      Text(message, Modifier.padding(top = 8.dp), textAlign = TextAlign.Center)
+      Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+          .padding(24.dp)
+          .background(Color.White, RoundedCornerShape(12.dp))
+          .padding(24.dp)
+      ) {
+        CircularProgressIndicator(modifier = Modifier.size(32.dp), color = Colors.Orange500)
+        Text(message, Modifier.padding(top = 8.dp), textAlign = TextAlign.Center)
+      }
     }
   }
 }
@@ -215,9 +232,35 @@ private fun Loading(message: String, onDismissRequest: () -> Unit) {
 
 @Preview(showSystemUi = true)
 @Composable
-private fun Prev() {
+private fun PrevLoading() {
   MaterialTheme() {
     Loading("Loading..") { }
   }
 
+}
+
+@Preview
+@Composable
+private fun Prev() {
+  MaterialTheme {
+    CallScreen(
+      isMicMuted = false,
+      speakerOutput = SpeakerOut.LoadSpeaker,
+      state = CallUiState(
+        destinationNumber = "08123123",
+        destinationName = "Ira Adi",
+        contactImage = "cumi",
+        metadata = mapOf(),
+        callState = CallState.Connected,
+        callStateMessage = "call end",
+        fatalError = "error",
+        timeCall = "12:12"
+      ),
+      onMuteClick = {},
+      onSpeakerOutputSelected = {},
+      onNumpadClick = {},
+      onEndCallClick = {},
+      onError = {}
+    )
+  }
 }

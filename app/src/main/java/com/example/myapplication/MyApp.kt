@@ -14,8 +14,8 @@ class MyApp : Application() {
     super.onCreate()
     CallSdk.init(this, isDebug = true)
     CallSdk.initAPI(
-      baseUrl = "https://staging-pbx.neokarya.co.id/",
-      token = "tok_e4caa40d22efb1333d8e19c07ac9861d1e87c513"
+      baseUrl = "YOUR_URL",
+      token = "YOUR_TOKEN"
     )
   }
 }

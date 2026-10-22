@@ -12,21 +12,19 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.neo.lib_call.api.CallSdk.makeCallSip
+import com.neo.lib_call.api.CallSdk.register
 import com.neo.lib_call.core.ApiClient
-import com.neo.lib_call.core.CallApiRepository
 import com.neo.lib_call.core.CallSdkInitializer
 import com.neo.lib_call.core.CallSessionManager
 import com.neo.lib_call.core.ContextProvider
 import com.neo.lib_call.core.LinphoneManager
-import com.neo.lib_call.core.RegisterRequest
-import com.neo.lib_call.core.RegisterResponse
 import com.neo.lib_call.model.CallRequest
 import com.neo.lib_call.model.CallState
 import com.neo.lib_call.model.RegisterState
 import com.neo.lib_call.model.SipCredentials
 import com.neo.lib_call.ui.CallActivity
 import com.neo.lib_call.util.Logger
-import java.lang.ref.WeakReference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +33,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import java.lang.ref.WeakReference
 
 /**
  * Entry point for initializing the SDK, registering a SIP account, and starting calls.
@@ -127,7 +126,13 @@ object CallSdk {
     contactImage: String? = null,
     metadata: Map<String, String> = emptyMap(),
   ): Intent {
-    val request = createRegisteredCallRequest(
+//    val request = createRegisteredCallRequest(
+//      destinationNumber = destinationNumber,
+//      destinationName = destinationName,
+//      contactImage = contactImage,
+//      metadata = metadata,
+//    )
+    val request = CallRequest(
       destinationNumber = destinationNumber,
       destinationName = destinationName,
       contactImage = contactImage,
@@ -146,7 +151,6 @@ object CallSdk {
     destinationName: String? = null,
     contactImage: String? = null,
     metadata: Map<String, String> = emptyMap(),
-    onFailedRegister: (String?) -> Unit,
   ) {
     checkInitialized()
     require(destinationNumber.isNotBlank()) { "destinationNumber is required" }
@@ -156,32 +160,32 @@ object CallSdk {
     val applicationContext = ContextProvider.requireContext()
 
     sdkScope.launch(Dispatchers.IO) {
-      val api = CallApiRepository(ApiClient.api).register(
-        request = RegisterRequest(
-          callerMobile = metadata.getOrDefault("customer_id", "Unknown"),
-          name = metadata.getOrDefault("customer_name", "Unknown"),
-        )
-      )
-      if (api.isFailure) {
-        withContext(Dispatchers.Main) {
-          onFailedRegister(api.exceptionOrNull()?.message)
-        }
-        return@launch
-      }
-      val apiData = api.getOrNull() ?: RegisterResponse()
-      val credentials = validatedCredentials(
-        username = apiData.extension.orEmpty(),
-        password = apiData.password.orEmpty(),
-        domain = apiData.domain.orEmpty()
-      )
-
-      val register = register(credentials)
-      if (register.isFailure) {
-        withContext(Dispatchers.Main) {
-          onFailedRegister(register.exceptionOrNull()?.message)
-        }
-        return@launch
-      }
+//      val api = CallApiRepository(ApiClient.api).register(
+//        request = RegisterRequest(
+//          callerMobile = metadata.getOrDefault("customer_id", "Unknown"),
+//          name = metadata.getOrDefault("customer_name", "Unknown"),
+//        )
+//      )
+//      if (api.isFailure) {
+//        withContext(Dispatchers.Main) {
+//          onFailedRegister(api.exceptionOrNull()?.message)
+//        }
+//        return@launch
+//      }
+//      val apiData = api.getOrNull() ?: RegisterResponse()
+//      val credentials = validatedCredentials(
+//        username = apiData.extension.orEmpty(),
+//        password = apiData.password.orEmpty(),
+//        domain = apiData.domain.orEmpty()
+//      )
+//
+//      val register = register(credentials)
+//      if (register.isFailure) {
+//        withContext(Dispatchers.Main) {
+//          onFailedRegister(register.exceptionOrNull()?.message)
+//        }
+//        return@launch
+//      }
 
       withContext(Dispatchers.Main) {
         applicationContext.startActivity(

@@ -5,12 +5,14 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
+import com.neo.lib_call.api.CallSdk
 import com.neo.lib_call.core.ApiClient
 import com.neo.lib_call.core.CallApiRepository
 import com.neo.lib_call.core.CallApiRequest
 import com.neo.lib_call.core.CallSessionManager
 import com.neo.lib_call.core.CallWebSocket
 import com.neo.lib_call.core.LinphoneManager
+import com.neo.lib_call.core.RegisterRequest
 import com.neo.lib_call.core.ReleaseRequest
 import com.neo.lib_call.core.TimerManager
 import com.neo.lib_call.core.WsRequest
@@ -19,6 +21,7 @@ import com.neo.lib_call.model.CallRequest
 import com.neo.lib_call.model.CallState
 import com.neo.lib_call.model.RegisterState
 import com.neo.lib_call.model.ReleaseExtensionState
+import com.neo.lib_call.model.SipCredentials
 import com.neo.lib_call.model.SpeakerOut
 import com.neo.lib_call.util.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,7 +45,7 @@ internal data class CallUiState(
   val fatalError: String? = null,
   val timeCall: String = "",
   val callDetailResult: String = "",
-  val releaseExtensionState : ReleaseExtensionState= ReleaseExtensionState.None
+  val releaseExtensionState: ReleaseExtensionState = ReleaseExtensionState.None,
 )
 
 internal class CallViewModel(
@@ -51,9 +54,11 @@ internal class CallViewModel(
   private val timerManager: TimerManager,
   val isIncomingCall: Boolean = false,
 ) : ViewModel() {
-  private val registeredAccount = requireNotNull(LinphoneManager.activeSipAccountOrNull()) {
-    "SIP account is not registered. Call CallSdk.register(...) first."
-  }
+  //  private val registeredAccount = requireNotNull(LinphoneManager.activeSipAccountOrNull()) {
+//    "SIP account is not registered. Call CallSdk.register(...) first."
+//  }
+  private var registeredAccount: LinphoneManager.RegisteredSipAccount? = null
+
   private val _uiState = MutableStateFlow(
     CallUiState(
       destinationNumber = request.destinationNumber,
@@ -65,11 +70,11 @@ internal class CallViewModel(
   val uiState: StateFlow<CallUiState> = _uiState.asStateFlow()
   private var callId: String? = null
 
-  init {
-    initWebSocket()
-    observeCallSession()
-    observeTimerSession()
-  }
+//  init {
+//    initWebSocket()
+//    observeCallSession()
+//    observeTimerSession()
+//  }
 
   private fun initWebSocket() {
     CallWebSocket.connectWebSocket(
@@ -80,9 +85,9 @@ internal class CallViewModel(
           Gson().toJson(
             WsRequest(
               type = "REGISTER_CALL",
-              username = registeredAccount.username,
-              domain = registeredAccount.domain,
-              agentExtention = registeredAccount.username
+              username = registeredAccount?.username.orEmpty(),
+              domain = registeredAccount?.domain.orEmpty(),
+              agentExtention = registeredAccount?.username.orEmpty()
             )
           )
         )
@@ -93,7 +98,7 @@ internal class CallViewModel(
           response?.let { data ->
             val matchesActiveCall = callId != null && data.callId == callId
             if (matchesActiveCall &&
-              data.agentExtension == registeredAccount.username &&
+              data.agentExtension == registeredAccount?.username &&
               data.billsec == null
             ) {
               when (data.event) {
@@ -135,7 +140,7 @@ internal class CallViewModel(
 
             if (matchesActiveCall
               && data.purpose == "agent"
-              && data.agentExtension == registeredAccount.username
+              && data.agentExtension == registeredAccount?.username
               && data.billsec != null
             ) {
               _uiState.update { state -> state.copy(callDetailResult = it) }
@@ -236,7 +241,7 @@ internal class CallViewModel(
         val startCall = repo.requestCall(
           CallApiRequest(
             number = request.destinationNumber,
-            agenExtention = registeredAccount.username,
+            agenExtention = registeredAccount?.username.orEmpty(),
             device = "mobile",
             metadata = request.metadata
           )
@@ -260,14 +265,73 @@ internal class CallViewModel(
     }
   }
 
-  fun beginCall() {
-    if (isIncomingCall) return
-    if (_uiState.value.callState == CallState.Initializing ||
-      _uiState.value.callState == CallState.Dialing
-    ) {
-      return
+  private suspend fun registerSip(): Boolean {
+    // loading
+    _uiState.update { it.copy(callState = CallState.Initializing) }
+    val request = RegisterRequest(
+      callerMobile = request.metadata["customer_id"] ?: "",
+      name = request.metadata["customer_name"] ?: "",
+    )
+    // get creadential extention
+    val result = repo.register(
+      request = request
+    )
+    if (result.isFailure) {
+      val throwable = result.exceptionOrNull()
+      _uiState.update {
+        it.copy(
+          callState = CallState.Failed,
+          fatalError = throwable?.message ?: "Failed register api"
+        )
+      }
+      return false
     }
-    startCall()
+    val data = result.getOrNull()
+    try {
+      // register sip
+      val credential = SipCredentials(
+        username = data?.extension.orEmpty(),
+        password = data?.password.orEmpty(),
+        domain = data?.domain.orEmpty()
+      )
+      val registerSip = CallSdk.register(credentials = credential)
+      if (registerSip.isFailure) {
+        val throwable = registerSip.exceptionOrNull()
+        _uiState.update {
+          it.copy(
+            callState = CallState.Failed,
+            fatalError = throwable?.message ?: "Failed register api"
+          )
+        }
+        return false
+      }
+      return true
+    } catch (e: Exception) {
+      _uiState.update {
+        it.copy(
+          callState = CallState.Failed,
+          fatalError = e.message ?: "Failed register api"
+        )
+      }
+      return false
+    }
+  }
+
+  fun beginCall() {
+    viewModelScope.launch {
+      if (isIncomingCall) return@launch
+      if (_uiState.value.callState == CallState.Initializing || _uiState.value.callState == CallState.Dialing) {
+        return@launch
+      }
+      val isRegistered = registerSip()
+      if (isRegistered) {
+        registeredAccount = LinphoneManager.activeSipAccountOrNull()
+        initWebSocket()
+        observeCallSession()
+        observeTimerSession()
+        startCall()
+      }
+    }
   }
 
   fun answerIncomingCall() {
@@ -292,7 +356,7 @@ internal class CallViewModel(
       Gson().toJson(
         HangupWsRequest(
           type = "HANGUP",
-          agentExtension = registeredAccount.username,
+          agentExtension = registeredAccount?.username.orEmpty(),
         )
       )
     )
@@ -339,14 +403,16 @@ internal class CallViewModel(
       _uiState.update { it.copy(releaseExtensionState = ReleaseExtensionState.Loading) }
       val result = repo.release(
         ReleaseRequest(
-          extension = registeredAccount.username,
+          extension = registeredAccount?.username.orEmpty(),
           callerMobile = request.metadata.getOrDefault("customer_id", ""),
         )
       )
-      if (result.isSuccess){
+      if (result.isSuccess) {
+        CallSdk.unregister()
         _uiState.update { it.copy(releaseExtensionState = ReleaseExtensionState.Success) }
       }
-      if (result.isFailure){
+      if (result.isFailure) {
+        CallSdk.unregister()
         _uiState.update { it.copy(releaseExtensionState = ReleaseExtensionState.Failed) }
       }
     }
