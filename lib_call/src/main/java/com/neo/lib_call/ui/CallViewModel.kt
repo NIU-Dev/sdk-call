@@ -4,17 +4,21 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
+import com.neo.lib_call.core.ApiClient
+import com.neo.lib_call.core.CallApiRepository
 import com.neo.lib_call.core.CallApiRequest
 import com.neo.lib_call.core.CallSessionManager
 import com.neo.lib_call.core.CallWebSocket
-import com.neo.lib_call.core.HitApiManager
 import com.neo.lib_call.core.LinphoneManager
+import com.neo.lib_call.core.ReleaseRequest
 import com.neo.lib_call.core.TimerManager
 import com.neo.lib_call.core.WsRequest
 import com.neo.lib_call.core.WsResponse
 import com.neo.lib_call.model.CallRequest
 import com.neo.lib_call.model.CallState
 import com.neo.lib_call.model.RegisterState
+import com.neo.lib_call.model.ReleaseExtensionState
 import com.neo.lib_call.model.SpeakerOut
 import com.neo.lib_call.util.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,10 +42,12 @@ internal data class CallUiState(
   val fatalError: String? = null,
   val timeCall: String = "",
   val callDetailResult: String = "",
+  val releaseExtensionState : ReleaseExtensionState= ReleaseExtensionState.None
 )
 
 internal class CallViewModel(
   private val request: CallRequest,
+  private val repo: CallApiRepository,
   private val timerManager: TimerManager,
   val isIncomingCall: Boolean = false,
 ) : ViewModel() {
@@ -227,12 +233,12 @@ internal class CallViewModel(
 
 //        LinphoneManager.startOutgoingCall(request.destinationNumber, request.metadata["phone_id"])
 
-        val startCall = HitApiManager.hitCallApi(
+        val startCall = repo.requestCall(
           CallApiRequest(
             number = request.destinationNumber,
             agenExtention = registeredAccount.username,
             device = "mobile",
-            param = request.metadata
+            metadata = request.metadata
           )
         )
         startCall.onFailure { throwable ->
@@ -328,6 +334,24 @@ internal class CallViewModel(
     CallWebSocket.closeWebSocketConnection()
   }
 
+  fun releaseExtention() {
+    viewModelScope.launch {
+      _uiState.update { it.copy(releaseExtensionState = ReleaseExtensionState.Loading) }
+      val result = repo.release(
+        ReleaseRequest(
+          extension = registeredAccount.username,
+          callerMobile = request.metadata.getOrDefault("customer_id", ""),
+        )
+      )
+      if (result.isSuccess){
+        _uiState.update { it.copy(releaseExtensionState = ReleaseExtensionState.Success) }
+      }
+      if (result.isFailure){
+        _uiState.update { it.copy(releaseExtensionState = ReleaseExtensionState.Failed) }
+      }
+    }
+  }
+
   class Factory(
     private val request: CallRequest,
     private val timerManager: TimerManager,
@@ -340,6 +364,7 @@ internal class CallViewModel(
           request,
           timerManager = timerManager,
           isIncomingCall = isIncomingCall,
+          repo = CallApiRepository(ApiClient.api)
         ) as T
       }
       throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
@@ -348,6 +373,8 @@ internal class CallViewModel(
 }
 
 private data class HangupWsRequest(
+  @SerializedName("type")
   val type: String,
+  @SerializedName("agentExtension")
   val agentExtension: String,
 )

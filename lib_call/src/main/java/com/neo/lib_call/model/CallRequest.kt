@@ -5,6 +5,4 @@ data class CallRequest(
   val destinationName: String?,
   val contactImage: String?,
   val metadata: Map<String, String>,
-  @Deprecated("Registration is owned by CallSdk and is not part of a call request.")
-  val credentials: SipCredentials? = null,
 )

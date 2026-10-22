@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -13,9 +14,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,15 +29,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neo.lib_call.api.CallSdk
 import com.neo.lib_call.core.TimerManager
 import com.neo.lib_call.model.CallRequest
 import com.neo.lib_call.model.CallState
+import com.neo.lib_call.model.ReleaseExtensionState
 import com.neo.lib_call.util.IntentKeys
 import com.neo.lib_call.util.MetadataConverter
 import java.io.Serializable
@@ -59,7 +59,8 @@ internal class CallActivity : ComponentActivity() {
     enableEdgeToEdge()
     setContent {
       val state by viewModel.uiState.collectAsStateWithLifecycle()
-      val showLoading = state.callState == CallState.Initializing
+      val showLoading = state.callState == CallState.Initializing ||
+        state.releaseExtensionState == ReleaseExtensionState.Loading
       val permissions = remember { requiredPermissions() }
       val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
@@ -69,7 +70,7 @@ internal class CallActivity : ComponentActivity() {
           if (viewModel.isIncomingCall) viewModel.answerIncomingCall() else viewModel.beginCall()
         } else {
           viewModel.setFatalError("Permission audio tidak lengkap. Aplikasi akan ditutup.")
-          finish()
+          viewModel.releaseExtention()
         }
       }
 
@@ -95,15 +96,19 @@ internal class CallActivity : ComponentActivity() {
         else -> Unit
       }
 
-      if (showLoading) {
-        Loading(state.callStateMessage) { }
-      }
-
-      if (!state.fatalError.isNullOrEmpty()) {
-        ErrorDialog(state.fatalError.orEmpty()) {
-          viewModel.setFatalError("")
+      LaunchedEffect(state.releaseExtensionState) {
+        if (state.releaseExtensionState in listOf(
+            ReleaseExtensionState.Success,
+            ReleaseExtensionState.Failed
+          )
+        ) {
+          Toast.makeText(this@CallActivity, "release : ${state.releaseExtensionState.name}", Toast.LENGTH_SHORT).show()
           finish()
         }
+      }
+
+      if (showLoading) {
+        Loading(state.callStateMessage) { }
       }
 
       SetSystemBarAppearance(true)
@@ -120,15 +125,18 @@ internal class CallActivity : ComponentActivity() {
               }
             }
             setResult(RESULT_OK, data)
-            finish()
+            viewModel.releaseExtention()
           },
           isMicMuted = state.isMicMuted,
           speakerOutput = state.speakerOutput,
           onMuteClick = { viewModel.toggleMute() },
           onSpeakerOutputSelected = { output -> viewModel.selectSpeakerOutput(output) },
           onNumpadClick = { digit -> viewModel.sendDtmf(digit) },
+          onError = {
+            viewModel.setFatalError("")
+            viewModel.releaseExtention()
+          }
         )
-
       }
     }
   }
@@ -154,7 +162,7 @@ internal class CallActivity : ComponentActivity() {
       val destinationNumber =
         requireNotNull(intent.getStringExtra(IntentKeys.EXTRA_DESTINATION_NUMBER)) {
           "Missing destination number for CallActivity."
-      }
+        }
       val destinationName = intent.getStringExtra(IntentKeys.EXTRA_DESTINATION_NAME)
 
       return CallRequest(
@@ -188,29 +196,6 @@ internal class CallActivity : ComponentActivity() {
   }
 }
 
-@Composable
-private fun ErrorDialog(message: String, onDismiss: () -> Unit) {
-  Dialog(
-    onDismissRequest = onDismiss,
-    properties = DialogProperties(
-      usePlatformDefaultWidth = false
-    ),
-  ) {
-    Box(
-      contentAlignment = Alignment.Center,
-      modifier = Modifier
-        .fillMaxSize()
-        .background(Color.DarkGray)
-    ) {
-      Text(
-        message, Modifier
-          .background(Color.White, RoundedCornerShape(12.dp))
-          .padding(vertical = 12.dp, horizontal = 18.dp)
-      )
-    }
-  }
-}
-
 
 @Composable
 private fun Loading(message: String, onDismissRequest: () -> Unit) {
@@ -225,4 +210,14 @@ private fun Loading(message: String, onDismissRequest: () -> Unit) {
       Text(message, Modifier.padding(top = 8.dp), textAlign = TextAlign.Center)
     }
   }
+}
+
+
+@Preview(showSystemUi = true)
+@Composable
+private fun Prev() {
+  MaterialTheme() {
+    Loading("Loading..") { }
+  }
+
 }

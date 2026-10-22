@@ -80,9 +80,9 @@ dependencies {
   debugImplementation(libs.androidx.compose.ui.test.manifest)
   implementation(libs.androidx.material.icons.extended)
   implementation(libs.okhttp)
-//  implementation(libs.okhttp.logging.interceptor){
-//    exclude(group = "org.jspecify", module = "jspecify")
-//  }
+  implementation(libs.okhttp.logging.interceptor) {
+    exclude(group = "org.jspecify", module = "jspecify")
+  }
   implementation(libs.converter.gson)
 
 }

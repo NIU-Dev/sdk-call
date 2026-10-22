@@ -20,3 +20,10 @@ enum class RegisterState {
   Failed,
   Refreshing,
 }
+
+enum class ReleaseExtensionState {
+  None,
+  Loading,
+  Success,
+  Failed,
+}

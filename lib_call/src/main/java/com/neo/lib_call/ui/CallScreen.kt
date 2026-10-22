@@ -23,12 +23,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Dialpad
 import androidx.compose.material.icons.filled.MicOff
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -37,8 +36,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,11 +51,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.zIndex
 import cc.neo.sdkcall.ui.DialPad
 import coil.compose.AsyncImage
-import com.neo.lib_call.BuildConfig
 import com.neo.lib_call.R
 import com.neo.lib_call.model.CallState
 import com.neo.lib_call.model.RegisterState
@@ -78,6 +77,7 @@ internal fun CallScreen(
   onSpeakerOutputSelected: (SpeakerOut) -> Unit,
   onNumpadClick: (number: String) -> Unit,
   onEndCallClick: () -> Unit,
+  onError: () -> Unit,
 ) {
   var showDialPad by rememberSaveable { mutableStateOf(false) }
   var showSpeakerDialog by rememberSaveable { mutableStateOf(false) }
@@ -87,6 +87,12 @@ internal fun CallScreen(
       showSpeakerDialog -> showSpeakerDialog = false
       showDialPad -> showDialPad = false
       else -> onEndCallClick()
+    }
+  }
+
+  if (!state.fatalError.isNullOrEmpty()) {
+    ErrorDialog(state.fatalError) {
+      onError()
     }
   }
 
@@ -410,27 +416,6 @@ private fun MultiLayerGradientBackground() {
 }
 
 @Composable
-private fun CallAvatar(imageUrl: String?) {
-  Box(
-    modifier = Modifier
-      .size(125.dp)
-      .clip(RoundedCornerShape(32.dp))
-      .background(Color.LightGray),
-    contentAlignment = Alignment.Center
-  ) {
-    if (imageUrl.isNullOrBlank()) {
-      Icon(
-        Icons.Default.Person,
-        contentDescription = null,
-        tint = Color.White,
-        modifier = Modifier.size(80.dp)
-      )
-    } else {
-    }
-  }
-}
-
-@Composable
 fun RoundIconButton(
   icon: ImageVector,
   label: String,
@@ -462,6 +447,30 @@ fun RoundIconButton(
   }
 }
 
+@Composable
+private fun ErrorDialog(message: String, onDismiss: () -> Unit) {
+  Dialog(
+    onDismissRequest = onDismiss,
+    properties = DialogProperties(
+      usePlatformDefaultWidth = false
+    ),
+  ) {
+    Box(
+      contentAlignment = Alignment.Center,
+      modifier = Modifier
+        .fillMaxSize()
+        .padding(horizontal = 24.dp)
+        .background(Color.DarkGray)
+    ) {
+      Text(
+        message, Modifier
+          .background(Color.White, RoundedCornerShape(12.dp))
+          .padding(vertical = 12.dp, horizontal = 18.dp)
+      )
+    }
+  }
+}
+
 @Preview
 @Composable
 private fun Prev() {
@@ -482,7 +491,8 @@ private fun Prev() {
       onMuteClick = {},
       onSpeakerOutputSelected = {},
       onNumpadClick = {},
-      onEndCallClick = {}
+      onEndCallClick = {},
+      onError = {}
     )
   }
 }

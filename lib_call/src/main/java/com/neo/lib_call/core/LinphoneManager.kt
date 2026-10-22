@@ -235,6 +235,10 @@ internal object LinphoneManager {
     CallSessionManager.updateRegisterState(RegisterState.Progress, "Registering SIP account")
 
     val normalizedDomain = credentials.domain
+
+    Logger.e("cekregister identity : sip:${credentials.username}@$normalizedDomain")
+    Logger.e("cekregister serverAddress : sip:$normalizedDomain")
+
     val identity = requireNotNull(
       Factory.instance().createAddress("sip:${credentials.username}@$normalizedDomain")
     ) {

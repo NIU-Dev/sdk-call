@@ -1,11 +1,25 @@
 package com.neo.lib_call.api
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.ComponentActivity
+import androidx.activity.result.ActivityResultCallback
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.neo.lib_call.core.ApiClient
+import com.neo.lib_call.core.CallApiRepository
 import com.neo.lib_call.core.CallSdkInitializer
 import com.neo.lib_call.core.CallSessionManager
+import com.neo.lib_call.core.ContextProvider
 import com.neo.lib_call.core.LinphoneManager
+import com.neo.lib_call.core.RegisterRequest
+import com.neo.lib_call.core.RegisterResponse
 import com.neo.lib_call.model.CallRequest
 import com.neo.lib_call.model.CallState
 import com.neo.lib_call.model.RegisterState
@@ -16,8 +30,10 @@ import java.lang.ref.WeakReference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 
 /**
@@ -50,6 +66,11 @@ object CallSdk {
     val weakPreference: WeakReference<Context> = WeakReference(context.applicationContext)
     CallSdkInitializer.initialize(weakPreference, isDebug)
     initialized = true
+  }
+
+  fun initAPI(baseUrl: String, token: String) {
+    ApiClient.BASE_URL = baseUrl
+    ApiClient.AUTH_TOKEN = token
   }
 
   /**
@@ -95,27 +116,6 @@ object CallSdk {
   }
 
   /**
-   * Starts a call using the SIP account previously registered through [register].
-   *
-   * This function fails immediately when registration is not ready or another call is active.
-   */
-  fun makeCall(
-    context: Context,
-    destinationNumber: String,
-    destinationName: String? = null,
-    contactImage: String? = null,
-    metadata: Map<String, String> = emptyMap(),
-  ) {
-    val request = createRegisteredCallRequest(
-      destinationNumber = destinationNumber,
-      destinationName = destinationName,
-      contactImage = contactImage,
-      metadata = metadata,
-    )
-    startCallActivity(context, request)
-  }
-
-  /**
    * Creates an intent for a call using the SIP account previously registered through [register].
    *
    * The returned intent contains call data only and never contains SIP credentials.
@@ -139,37 +139,59 @@ object CallSdk {
   /**
    * Compatibility API that registers the supplied account asynchronously before starting a call.
    *
-   * New integrations should call [register] explicitly and use the credential-free [makeCall].
+   * New integrations should call [register] explicitly and use the credential-free [makeCallSip].
    */
-  @Deprecated(
-    message = "Call CallSdk.register(...) first, then use makeCall(...) without credentials.",
-  )
-  fun makeCall(
-    context: Context,
+  fun makeCallSip(
     destinationNumber: String,
     destinationName: String? = null,
     contactImage: String? = null,
     metadata: Map<String, String> = emptyMap(),
-    username: String,
-    password: String,
-    domain: String,
+    onFailedRegister: (String?) -> Unit,
   ) {
     checkInitialized()
     require(destinationNumber.isNotBlank()) { "destinationNumber is required" }
-    val credentials = validatedCredentials(username, password, domain)
-    val applicationContext = context.applicationContext
+    require(metadata["customer_id"] != null) { "metadata customer_id is required" }
+    require(metadata["customer_name"] != null) { "metadata customer_name is required" }
 
-    sdkScope.launch {
-      val result = register(credentials)
-      if (result.isFailure) return@launch
+    val applicationContext = ContextProvider.requireContext()
+
+    sdkScope.launch(Dispatchers.IO) {
+      val api = CallApiRepository(ApiClient.api).register(
+        request = RegisterRequest(
+          callerMobile = metadata.getOrDefault("customer_id", "Unknown"),
+          name = metadata.getOrDefault("customer_name", "Unknown"),
+        )
+      )
+      if (api.isFailure) {
+        withContext(Dispatchers.Main) {
+          onFailedRegister(api.exceptionOrNull()?.message)
+        }
+        return@launch
+      }
+      val apiData = api.getOrNull() ?: RegisterResponse()
+      val credentials = validatedCredentials(
+        username = apiData.extension.orEmpty(),
+        password = apiData.password.orEmpty(),
+        domain = apiData.domain.orEmpty()
+      )
+
+      val register = register(credentials)
+      if (register.isFailure) {
+        withContext(Dispatchers.Main) {
+          onFailedRegister(register.exceptionOrNull()?.message)
+        }
+        return@launch
+      }
 
       withContext(Dispatchers.Main) {
-        makeCall(
-          context = applicationContext,
-          destinationNumber = destinationNumber,
-          destinationName = destinationName,
-          contactImage = contactImage,
-          metadata = metadata,
+        applicationContext.startActivity(
+          makeCallIntent(
+            context = applicationContext,
+            destinationNumber = destinationNumber,
+            destinationName = destinationName,
+            contactImage = contactImage,
+            metadata = metadata,
+          )
         )
       }
     }
@@ -184,7 +206,7 @@ object CallSdk {
   @Deprecated(
     message = "Call CallSdk.register(...) first, then use makeCallIntent(...) without credentials.",
   )
-  fun makeCallIntent(
+  private fun makeCallIntent(
     context: Context,
     destinationNumber: String,
     destinationName: String? = null,
@@ -216,17 +238,20 @@ object CallSdk {
   ): CallRequest {
     checkInitialized()
     require(destinationNumber.isNotBlank()) { "destinationNumber is required" }
-    check(registrationState.value == RegisterState.Ok &&
-      LinphoneManager.activeSipAccountOrNull() != null
+    check(
+      registrationState.value == RegisterState.Ok &&
+        LinphoneManager.activeSipAccountOrNull() != null
     ) {
       "SIP account is not registered. Call CallSdk.register(...) first."
     }
     val currentCallState = callState.value
-    check(!LinphoneManager.hasActiveCall() && currentCallState in listOf(
-      CallState.Idle,
-      CallState.Ended,
-      CallState.Failed,
-    )) {
+    check(
+      !LinphoneManager.hasActiveCall() && currentCallState in listOf(
+        CallState.Idle,
+        CallState.Ended,
+        CallState.Failed,
+      )
+    ) {
       "Another call is already active."
     }
 
@@ -235,12 +260,6 @@ object CallSdk {
       destinationName = destinationName,
       contactImage = contactImage,
       metadata = metadata,
-    )
-  }
-
-  private fun startCallActivity(context: Context, request: CallRequest) {
-    context.startActivity(
-      CallActivity.createIntent(context, request).withNewTaskFlagWhenNeeded(context)
     )
   }
 
@@ -262,6 +281,96 @@ object CallSdk {
   private fun checkInitialized() {
     check(initialized) {
       "CallSdk has not been initialized. Call CallSdk.init(...) first."
+    }
+  }
+
+
+  private val requiredPermissions = arrayOf(
+    Manifest.permission.RECORD_AUDIO,
+    Manifest.permission.READ_PHONE_STATE,
+  )
+
+  @RequiresApi(Build.VERSION_CODES.P)
+  private val requiredPermissions28 = arrayOf(
+    Manifest.permission.RECORD_AUDIO,
+    Manifest.permission.FOREGROUND_SERVICE,
+    Manifest.permission.READ_PHONE_STATE,
+  )
+
+  @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+  private val requiredPermissionsTirmaisu = arrayOf(
+    Manifest.permission.RECORD_AUDIO,
+    Manifest.permission.FOREGROUND_SERVICE,
+    Manifest.permission.POST_NOTIFICATIONS,
+    Manifest.permission.READ_PHONE_STATE,
+  )
+
+  @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+  private val requiredPermissionsUpsideDownCake = arrayOf(
+    Manifest.permission.RECORD_AUDIO,
+    Manifest.permission.FOREGROUND_SERVICE,
+    Manifest.permission.POST_NOTIFICATIONS,
+    Manifest.permission.READ_PHONE_STATE,
+    Manifest.permission.FOREGROUND_SERVICE_MICROPHONE,
+    Manifest.permission.FOREGROUND_SERVICE_PHONE_CALL
+  )
+
+  fun checkAndRequestPermissions(activity: Activity): Boolean {
+    val ctx = ContextProvider.requireContext()
+
+    val permissions = when {
+      Build.VERSION.SDK_INT < Build.VERSION_CODES.P -> requiredPermissions
+      Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU -> requiredPermissions28
+      Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> requiredPermissionsTirmaisu
+      else -> requiredPermissionsUpsideDownCake
+    }
+
+    val notGranted = permissions.filter {
+      ContextCompat.checkSelfPermission(ctx, it) != PackageManager.PERMISSION_GRANTED
+    }
+
+    return if (notGranted.isEmpty()) {
+      // Semua permission sudah diberikan
+      true
+    } else {
+      // Masih ada yang belum diberikan → request ke user
+      ActivityCompat.requestPermissions(activity, notGranted.toTypedArray(), 1001)
+      false
+    }
+  }
+
+  @OptIn(ExperimentalCoroutinesApi::class)
+  private suspend fun isForegroundMicPermissionGranted(activity: ComponentActivity): Boolean {
+    val ctx = ContextProvider.requireContext()
+
+    val permissions = when {
+      Build.VERSION.SDK_INT < Build.VERSION_CODES.P -> requiredPermissions
+      Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU -> requiredPermissions28
+      Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> requiredPermissionsTirmaisu
+      else -> requiredPermissionsUpsideDownCake
+    }
+
+    val notGranted = permissions.filter {
+      ContextCompat.checkSelfPermission(ctx, it) != PackageManager.PERMISSION_GRANTED
+    }
+
+    if (notGranted.isEmpty()) return true
+
+    return suspendCancellableCoroutine { continuation ->
+      // val requestCode = 1001
+
+      val callback = ActivityResultCallback<Map<String, Boolean>> { result ->
+        val allGranted = result.values.all { it }
+        continuation.resume(allGranted) { cause, _, _ -> }
+      }
+
+      val launcher = activity.activityResultRegistry.register(
+        "permission_request_${System.currentTimeMillis()}",
+        ActivityResultContracts.RequestMultiplePermissions(),
+        callback
+      )
+
+      launcher.launch(notGranted.toTypedArray())
     }
   }
 }

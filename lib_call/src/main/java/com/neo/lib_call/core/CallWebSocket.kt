@@ -1,6 +1,7 @@
 package com.neo.lib_call.core
 
 import android.util.Log
+import com.google.gson.annotations.SerializedName
 import com.neo.lib_call.model.CallState
 import com.neo.lib_call.util.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,22 +21,36 @@ import java.util.concurrent.TimeUnit
  * All Rights Reserved
  */
 internal data class WsRequest(
+  @SerializedName("type")
   val type: String,
+  @SerializedName("username")
   val username: String,
+  @SerializedName("domain")
   val domain: String,
+  @SerializedName("agentExtention")
   val agentExtention: String,
 )
 
 internal data class WsResponse(
+  @SerializedName("agentExtension")
   val agentExtension: String,
+  @SerializedName("event")
   val event: String? = null,
+  @SerializedName("callId")
   val callId: String? = null,
+  @SerializedName("uration")
   val duration: String? = null,
+  @SerializedName("atelephoneId")
   val telephoneId: String? = null,
+  @SerializedName("taskId")
   val taskId: String? = null,
+  @SerializedName("purpose")
   val purpose: String? = null,
+  @SerializedName("reason")
   val reason: String? = null,
+  @SerializedName("billsec")
   val billsec: Int? = null,
+  @SerializedName("cause")
   val cause: String? = null,
 )
 

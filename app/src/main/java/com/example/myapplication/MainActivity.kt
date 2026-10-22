@@ -4,13 +4,13 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -22,13 +22,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountCircle
+import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Phone
@@ -53,23 +57,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.content.ContextCompat
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.neo.lib_call.api.CallSdk
@@ -120,13 +122,16 @@ fun CallScreen() {
   Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
     val context = LocalContext.current
     var passwordVisible by remember { mutableStateOf(false) }
-    var destination by remember { mutableStateOf("085600431521") }
+//    var destination by remember { mutableStateOf("085600431521") }
+    var destination by remember { mutableStateOf("94200105629") }
 //    var destination by remember { mutableStateOf("085771518294") }
     var name by remember { mutableStateOf("Jack Sparrow") }
-    var image by remember { mutableStateOf("https://akcdn.detik.net.id/api/wm/2026/02/05/suraj-chavan-1770282300425_169.png?w=1200") }
+    var image by remember { mutableStateOf("https://img.magnific.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4841.jpg") }
     var user by remember { mutableStateOf("1012") }
     var pass by remember { mutableStateOf("5678") }
+//    var domain by remember { mutableStateOf("staging-pbx.neokarya.co.id") }
     var domain by remember { mutableStateOf("147.139.193.218:5551") }
+    var typeCall by remember { mutableStateOf("teleai") }
 
     Box(
       modifier = Modifier
@@ -170,123 +175,123 @@ fun CallScreen() {
 
         Spacer(Modifier.height(16.dp))
 
-        FormCard(
-          title = "SIP account",
-          subtitle = "Register once before starting a call",
-        ) {
-          AppTextField(
-            value = user,
-            onValueChange = { user = it },
-            label = "Username",
-            icon = Icons.Rounded.AccountCircle,
-          )
-          Spacer(Modifier.height(12.dp))
-          AppTextField(
-            value = pass,
-            onValueChange = { pass = it },
-            label = "Password",
-            icon = Icons.Rounded.Lock,
-            visualTransformation = if (passwordVisible) {
-              VisualTransformation.None
-            } else {
-              PasswordVisualTransformation()
-            },
-            trailingIcon = {
-              IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                Text(
-                  text = if (passwordVisible) "Hide" else "Show",
-                  style = MaterialTheme.typography.labelSmall,
-                )
-              }
-            },
-          )
-          Spacer(Modifier.height(12.dp))
-          AppTextField(
-            value = domain,
-            onValueChange = { domain = it },
-            label = "Domain / server",
-            icon = Icons.Rounded.AccountCircle,
-          )
-
-          registrationError?.let { error ->
-            Spacer(Modifier.height(12.dp))
-            Surface(
-              color = MaterialTheme.colorScheme.errorContainer,
-              shape = RoundedCornerShape(12.dp),
-            ) {
-              Text(
-                text = error,
-                color = MaterialTheme.colorScheme.onErrorContainer,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(12.dp),
-              )
-            }
-          }
-
-          Spacer(Modifier.height(16.dp))
-          Button(
-            enabled = registrationState !in listOf(
-              RegisterState.Progress,
-              RegisterState.Refreshing,
-            ) && user.isNotBlank() && pass.isNotBlank() && domain.isNotBlank(),
-            onClick = {
-              registrationError = null
-              coroutineScope.launch {
-                CallSdk.register(
-                  SipCredentials(
-                    username = user,
-                    password = pass,
-                    domain = domain,
-                  )
-                ).onSuccess {
-                  passwordVisible = false
-                }.onFailure { error ->
-                  registrationError = error.message ?: "Registration failed"
-                }
-              }
-            },
-            modifier = Modifier
-              .fillMaxWidth()
-              .height(52.dp),
-            shape = RoundedCornerShape(14.dp),
-          ) {
-            if (registrationState in listOf(
-                RegisterState.Progress,
-                RegisterState.Refreshing,
-              )
-            ) {
-              CircularProgressIndicator(
-                modifier = Modifier.size(20.dp),
-                strokeWidth = 2.dp,
-                color = MaterialTheme.colorScheme.onPrimary,
-              )
-              Spacer(Modifier.width(10.dp))
-              Text("Registering…")
-            } else {
-              Icon(Icons.Rounded.CheckCircle, contentDescription = null)
-              Spacer(Modifier.width(10.dp))
-              Text(if (registrationState == RegisterState.Ok) "Re-register" else "Register")
-            }
-          }
-
-          if (registrationState == RegisterState.Ok) {
-            TextButton(
-              onClick = {
-                registrationError = null
-                coroutineScope.launch {
-                  CallSdk.unregister().onFailure { error ->
-                    registrationError = error.message ?: "Unregister failed"
-                  }
-                }
-              },
-              modifier = Modifier.align(Alignment.CenterHorizontally),
-            ) {
-              Text("Unregister account")
-            }
-          }
-        }
-
-        Spacer(Modifier.height(16.dp))
+//        FormCard(
+//          title = "SIP account",
+//          subtitle = "Register once before starting a call",
+//        ) {
+//          AppTextField(
+//            value = user,
+//            onValueChange = { user = it },
+//            label = "Username",
+//            icon = Icons.Rounded.AccountCircle,
+//          )
+//          Spacer(Modifier.height(12.dp))
+//          AppTextField(
+//            value = pass,
+//            onValueChange = { pass = it },
+//            label = "Password",
+//            icon = Icons.Rounded.Lock,
+//            visualTransformation = if (passwordVisible) {
+//              VisualTransformation.None
+//            } else {
+//              PasswordVisualTransformation()
+//            },
+//            trailingIcon = {
+//              IconButton(onClick = { passwordVisible = !passwordVisible }) {
+//                Text(
+//                  text = if (passwordVisible) "Hide" else "Show",
+//                  style = MaterialTheme.typography.labelSmall,
+//                )
+//              }
+//            },
+//          )
+//          Spacer(Modifier.height(12.dp))
+//          AppTextField(
+//            value = domain,
+//            onValueChange = { domain = it },
+//            label = "Domain / server",
+//            icon = Icons.Rounded.AccountCircle,
+//          )
+//
+//          registrationError?.let { error ->
+//            Spacer(Modifier.height(12.dp))
+//            Surface(
+//              color = MaterialTheme.colorScheme.errorContainer,
+//              shape = RoundedCornerShape(12.dp),
+//            ) {
+//              Text(
+//                text = error,
+//                color = MaterialTheme.colorScheme.onErrorContainer,
+//                style = MaterialTheme.typography.bodySmall,
+//                modifier = Modifier.padding(12.dp),
+//              )
+//            }
+//          }
+//
+//          Spacer(Modifier.height(16.dp))
+//          Button(
+//            enabled = registrationState !in listOf(
+//              RegisterState.Progress,
+//              RegisterState.Refreshing,
+//            ) && user.isNotBlank() && pass.isNotBlank() && domain.isNotBlank(),
+//            onClick = {
+//              registrationError = null
+//              coroutineScope.launch {
+//                CallSdk.register(
+//                  SipCredentials(
+//                    username = user,
+//                    password = pass,
+//                    domain = domain,
+//                  )
+//                ).onSuccess {
+//                  passwordVisible = false
+//                }.onFailure { error ->
+//                  registrationError = error.message ?: "Registration failed"
+//                }
+//              }
+//            },
+//            modifier = Modifier
+//              .fillMaxWidth()
+//              .height(52.dp),
+//            shape = RoundedCornerShape(14.dp),
+//          ) {
+//            if (registrationState in listOf(
+//                RegisterState.Progress,
+//                RegisterState.Refreshing,
+//              )
+//            ) {
+//              CircularProgressIndicator(
+//                modifier = Modifier.size(20.dp),
+//                strokeWidth = 2.dp,
+//                color = MaterialTheme.colorScheme.onPrimary,
+//              )
+//              Spacer(Modifier.width(10.dp))
+//              Text("Registering…")
+//            } else {
+//              Icon(Icons.Rounded.CheckCircle, contentDescription = null)
+//              Spacer(Modifier.width(10.dp))
+//              Text(if (registrationState == RegisterState.Ok) "Re-register" else "Register")
+//            }
+//          }
+//
+//          if (registrationState == RegisterState.Ok) {
+//            TextButton(
+//              onClick = {
+//                registrationError = null
+//                coroutineScope.launch {
+//                  CallSdk.unregister().onFailure { error ->
+//                    registrationError = error.message ?: "Unregister failed"
+//                  }
+//                }
+//              },
+//              modifier = Modifier.align(Alignment.CenterHorizontally),
+//            ) {
+//              Text("Unregister account")
+//            }
+//          }
+//        }
+//
+//        Spacer(Modifier.height(16.dp))
         FormCard(
           title = "Call destination",
           subtitle = "Choose who you want to contact",
@@ -297,6 +302,13 @@ fun CallScreen() {
             label = "Phone number",
             icon = Icons.Rounded.Phone,
             keyboardType = KeyboardType.Phone,
+          )
+          Spacer(Modifier.height(12.dp))
+          AppTextField(
+            value = typeCall,
+            onValueChange = { typeCall = it },
+            label = "Type Call name",
+            icon = Icons.Rounded.ArrowDropDown,
           )
           Spacer(Modifier.height(12.dp))
           AppTextField(
@@ -316,6 +328,31 @@ fun CallScreen() {
 
         Spacer(Modifier.height(18.dp))
         Button(
+          shape = RoundedCornerShape(16.dp),
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(58.dp),
+          onClick = {
+            CallSdk.makeCallSip(
+              destinationNumber = destination,
+              contactImage = image,
+              destinationName = name,
+              metadata = mapOf(
+                "telephone_id" to "telID",
+                "customer_id" to "custID",
+                "customer_name" to name,
+                "type_call" to typeCall
+              ),
+              onFailedRegister = {
+                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+              }
+            )
+          }) {
+          Text("Call with register")
+        }
+
+
+        Button(
           enabled = registrationState == RegisterState.Ok && destination.isNotBlank(),
           onClick = {
             val intent = CallSdk.makeCallIntent(
@@ -325,8 +362,9 @@ fun CallScreen() {
               destinationName = name,
               metadata = mapOf(
                 "telephone_id" to "telID",
-                "customer_id" to "cusID",
+                "customer_id" to "custID",
                 "customer_name" to name,
+                "type_call" to typeCall
               )
             )
             callLauncher.launch(intent)
@@ -337,8 +375,9 @@ fun CallScreen() {
           ),
           shape = RoundedCornerShape(16.dp),
           modifier = Modifier
+            .padding(top = 12.dp)
             .fillMaxWidth()
-            .height(58.dp),
+            .height(58.dp)
         ) {
           Icon(Icons.Rounded.Call, contentDescription = null)
           Spacer(Modifier.width(10.dp))
